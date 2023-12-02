@@ -1,0 +1,26 @@
+from pyspark.mllib.tree import DecisionTree, DecisionTreeModel
+from pyspark.mllib.regression import LabeledPoint
+
+variety = ["Setosa", "Versicolor", "Virginica"]
+
+def getFeatures(x):
+    return [x["sepal.length"],
+    x["sepal.width"],
+    x["petal.length"],
+    x["petal.width"]]
+
+def getLabel(x):
+    return variety.index(x["variety"])
+
+df = spark.read.csv("s3://bakery-spark-buckets/iris.csv", header=True).rdd
+(trainingData, testData) = df.randomSplit([0.7,0.3])
+labeledPoints = trainingData.map(lambda x : LabeledPoint( getLabel(x), getFeatures(x) ))
+
+model = DecisionTree.trainClassifier(labeledPoints, numClasses=3, categoricalFeaturesInfo = {}, impurity='gini', maxDepth=5, maxBins=76)
+predictions = model.predict(testData.map(lambda x : getFeatures(x)))
+
+labelsAndPredictions = testData.map(lambda x : getLabel(x)).zip(predictions)
+testErr = labelsAndPredictions.filter(lambda lp : lp[0] != lp[1]).count()/float(testData.count())
+ print("Test Error is " + str(testErr))
+ predictions.collect()
+ labelsAndPredictions.collect()
