@@ -21,6 +21,9 @@ predictions = model.predict(testData.map(lambda x : getFeatures(x)))
 
 labelsAndPredictions = testData.map(lambda x : getLabel(x)).zip(predictions)
 testErr = labelsAndPredictions.filter(lambda lp : lp[0] != lp[1]).count()/float(testData.count())
+
  print("Test Error is " + str(testErr))
+
  predictions.collect()
+
  labelsAndPredictions.collect()
